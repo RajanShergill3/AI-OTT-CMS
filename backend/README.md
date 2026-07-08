@@ -53,7 +53,7 @@ Request → routes/ → controllers/ → services/ → models/ → MongoDB
 | **dotenv** | Loads `.env` into `process.env` at startup |
 | **cors** | Cross-Origin Resource Sharing — allows the React frontend to call the API |
 | **helmet** | Sets secure HTTP headers (CSP, X-Frame-Options, HSTS, etc.) |
-| **morgan** | HTTP request logger — `dev` format locally, `combined` in production |
+| **winston** | Structured logging — console, file, and error transports |
 | **express-rate-limit** | Rate limiting per IP — mitigates brute-force and abuse |
 | **compression** | Gzip response bodies — reduces payload size for JSON responses |
 
@@ -68,6 +68,10 @@ Request → routes/ → controllers/ → services/ → models/ → MongoDB
 | **eslint-config-prettier** | Disables ESLint rules that conflict with Prettier |
 | **prettier** | Code formatting |
 | **@types/\*** | TypeScript definitions for JavaScript packages |
+
+## Logging
+
+Winston-based structured logging with console and file transports. See [docs/guides/logging.md](docs/guides/logging.md).
 
 ## Environment Variables
 

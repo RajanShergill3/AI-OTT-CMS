@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { databaseConfig } from '../config/database.js';
+import { logger } from '../utils/logger.js';
 import type {
   ConnectDatabaseOptions,
   DatabaseReadyState,
@@ -19,16 +20,6 @@ let shutdownInProgress = false;
 let shutdownCallback: GracefulShutdownCallback | undefined;
 let shutdownTimeoutMs = 10_000;
 
-const log = (message: string): void => {
-  const timestamp = new Date().toISOString();
-  console.log(`[database] ${timestamp} ${message}`);
-};
-
-const logError = (message: string, error?: unknown): void => {
-  const timestamp = new Date().toISOString();
-  console.error(`[database] ${timestamp} ${message}`, error ?? '');
-};
-
 const mapReadyState = (state: number): DatabaseReadyState => {
   return READY_STATE_MAP[state] ?? 'unknown';
 };
@@ -42,34 +33,49 @@ const attachConnectionEventListeners = (): void => {
   const { connection } = mongoose;
 
   connection.on('connected', () => {
-    log(`Connected to MongoDB [${connection.host}/${connection.name}]`);
+    logger.info('MongoDB connected', {
+      type: 'database',
+      host: connection.host,
+      database: connection.name,
+    });
   });
 
   connection.on('reconnected', () => {
-    log(`Reconnected to MongoDB [${connection.host}/${connection.name}]`);
+    logger.info('MongoDB reconnected', {
+      type: 'database',
+      host: connection.host,
+      database: connection.name,
+    });
   });
 
   connection.on('disconnected', () => {
-    log('Disconnected from MongoDB');
+    logger.warn('MongoDB disconnected', { type: 'database' });
   });
 
   connection.on('error', (error: Error) => {
-    logError('MongoDB connection error', error);
+    logger.error('MongoDB connection error', {
+      type: 'database',
+      message: error.message,
+      stack: error.stack,
+    });
   });
 };
 
 const handleShutdownSignal = (signal: NodeJS.Signals) => {
   return async (): Promise<void> => {
     if (shutdownInProgress) {
-      log(`Shutdown already in progress — ignoring ${signal}`);
+      logger.warn('Shutdown already in progress', { type: 'shutdown', signal });
       return;
     }
 
     shutdownInProgress = true;
-    log(`${signal} received — starting graceful shutdown`);
+    logger.info('Graceful shutdown initiated', { type: 'shutdown', signal });
 
     const forceExitTimer = setTimeout(() => {
-      logError(`Graceful shutdown timed out after ${shutdownTimeoutMs}ms — forcing exit`);
+      logger.error('Graceful shutdown timed out — forcing exit', {
+        type: 'shutdown',
+        timeoutMs: shutdownTimeoutMs,
+      });
       process.exit(1);
     }, shutdownTimeoutMs);
 
@@ -77,16 +83,20 @@ const handleShutdownSignal = (signal: NodeJS.Signals) => {
 
     try {
       if (shutdownCallback) {
-        log('Running pre-disconnect shutdown callback');
+        logger.info('Running pre-disconnect shutdown callback', { type: 'shutdown' });
         await shutdownCallback();
       }
 
       await disconnectDatabase();
-      log('Graceful shutdown complete');
+      logger.info('Graceful shutdown complete', { type: 'shutdown' });
       clearTimeout(forceExitTimer);
       process.exit(0);
     } catch (error) {
-      logError('Error during graceful shutdown', error);
+      logger.error('Error during graceful shutdown', {
+        type: 'shutdown',
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       clearTimeout(forceExitTimer);
       process.exit(1);
     }
@@ -123,7 +133,7 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
   const currentState = mongoose.connection.readyState;
 
   if (currentState === 1) {
-    log('Already connected to MongoDB');
+    logger.debug('MongoDB already connected', { type: 'database' });
     if (shouldRegisterSignals) {
       registerSignalHandlers();
     }
@@ -131,7 +141,7 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
   }
 
   if (currentState === 2) {
-    log('Connection already in progress — waiting for existing attempt');
+    logger.debug('MongoDB connection in progress — awaiting existing attempt', { type: 'database' });
     await mongoose.connection.asPromise();
     if (shouldRegisterSignals) {
       registerSignalHandlers();
@@ -140,16 +150,23 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
   }
 
   try {
-    log(`Connecting to MongoDB [${maskUri(databaseConfig.uri)}]`);
+    logger.info('Connecting to MongoDB', {
+      type: 'database',
+      uri: maskUri(databaseConfig.uri),
+    });
     await mongoose.connect(databaseConfig.uri, databaseConfig.options);
-    log('MongoDB connection established');
+    logger.info('MongoDB connection established', { type: 'database' });
 
     if (shouldRegisterSignals) {
       registerSignalHandlers();
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown connection error';
-    logError(`Failed to connect to MongoDB: ${message}`, error);
+    logger.error('Failed to connect to MongoDB', {
+      type: 'database',
+      message,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     throw new Error(`MongoDB connection failed: ${message}`, { cause: error });
   }
 };
@@ -162,22 +179,26 @@ export const disconnectDatabase = async (): Promise<void> => {
   const currentState = mongoose.connection.readyState;
 
   if (currentState === 0) {
-    log('Already disconnected from MongoDB');
+    logger.debug('MongoDB already disconnected', { type: 'database' });
     return;
   }
 
   if (currentState === 3) {
-    log('Disconnect already in progress');
+    logger.debug('MongoDB disconnect already in progress', { type: 'database' });
     await mongoose.connection.asPromise().catch(() => undefined);
     return;
   }
 
   try {
-    log('Closing MongoDB connection');
+    logger.info('Closing MongoDB connection', { type: 'database' });
     await mongoose.disconnect();
-    log('MongoDB connection closed');
+    logger.info('MongoDB connection closed', { type: 'database' });
   } catch (error) {
-    logError('Error while disconnecting from MongoDB', error);
+    logger.error('Error while disconnecting from MongoDB', {
+      type: 'database',
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     throw error;
   }
 };

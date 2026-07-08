@@ -1,31 +1,33 @@
 import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { config, connectDatabase } from './config/index.js';
+import { logger } from './utils/logger.js';
 import type { Server } from 'node:http';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
-
-const log = (message: string): void => {
-  console.log(`[server] ${new Date().toISOString()} ${message}`);
-};
-
-const logError = (message: string, error?: unknown): void => {
-  console.error(`[server] ${new Date().toISOString()} ${message}`, error ?? '');
-};
 
 /**
  * Register process-level error handlers to prevent silent crashes.
  */
 const registerProcessHandlers = (): void => {
   process.on('unhandledRejection', (reason: unknown) => {
-    logError('Unhandled promise rejection', reason);
+    logger.error('Unhandled promise rejection', {
+      type: 'process',
+      reason: reason instanceof Error ? reason.message : reason,
+      stack: reason instanceof Error ? reason.stack : undefined,
+    });
+
     if (config.isProduction) {
       process.exit(1);
     }
   });
 
   process.on('uncaughtException', (error: Error) => {
-    logError('Uncaught exception', error);
+    logger.error('Uncaught exception', {
+      type: 'process',
+      message: error.message,
+      stack: error.stack,
+    });
     process.exit(1);
   });
 };
@@ -46,7 +48,7 @@ export const startServer = async (): Promise<Server> => {
           return;
         }
 
-        log('Closing HTTP server');
+        logger.info('Closing HTTP server', { type: 'shutdown' });
 
         await new Promise<void>((resolve, reject) => {
           httpServer.instance!.close((error) => {
@@ -58,12 +60,16 @@ export const startServer = async (): Promise<Server> => {
           });
         });
 
-        log('HTTP server closed');
+        logger.info('HTTP server closed', { type: 'shutdown' });
       },
       shutdownTimeoutMs: SHUTDOWN_TIMEOUT_MS,
     });
   } catch (error) {
-    logError('Failed to connect to database', error);
+    logger.error('Failed to connect to database', {
+      type: 'startup',
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     process.exit(1);
   }
 
@@ -71,16 +77,23 @@ export const startServer = async (): Promise<Server> => {
 
   return new Promise<Server>((resolve, reject) => {
     const server = app.listen(config.port, () => {
-      log(`Running on port ${config.port} [${config.env}]`);
-      log(`API: http://localhost:${config.port}/api/v1`);
+      logger.info('Server started', {
+        type: 'startup',
+        port: config.port,
+        environment: config.env,
+        apiPrefix: '/api/v1',
+      });
       httpServer.instance = server;
       resolve(server);
     });
 
     server.on('error', (error: NodeJS.ErrnoException) => {
-      if (error.code === 'EADDRINUSE') {
-        logError(`Port ${config.port} is already in use`);
-      }
+      logger.error('Server failed to start', {
+        type: 'startup',
+        code: error.code,
+        message: error.message,
+        port: config.port,
+      });
       reject(error);
     });
   });
@@ -90,7 +103,11 @@ const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
 
 if (isMainModule) {
   startServer().catch((error: unknown) => {
-    logError('Failed to start server', error);
+    logger.error('Failed to start server', {
+      type: 'startup',
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     process.exit(1);
   });
 }

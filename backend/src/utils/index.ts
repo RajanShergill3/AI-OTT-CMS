@@ -12,3 +12,5 @@ export type {
 } from './api-response.js';
 export { asyncHandler } from './async-handler.js';
 export { hashPassword, comparePassword } from './hash.js';
+export { logger, logInfo, logWarn, logError, logDebug } from './logger.js';
+export type { LogLevel } from './logger.js';

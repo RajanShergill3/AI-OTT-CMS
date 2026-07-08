@@ -5,7 +5,7 @@ import { corsConfig } from './config/cors.js';
 import { config } from './config/index.js';
 import { apiRateLimiter } from './middleware/rate-limit.middleware.js';
 import { errorHandler } from './middleware/error.middleware.js';
-import { loggerMiddleware } from './middleware/logger.middleware.js';
+import { requestLoggerMiddleware } from './middleware/request-logger.middleware.js';
 import { notFoundHandler } from './middleware/not-found.middleware.js';
 import { requestIdMiddleware } from './middleware/request-id.middleware.js';
 import { securityMiddleware } from './middleware/security.middleware.js';
@@ -23,7 +23,7 @@ const API_V1_PREFIX = '/api/v1';
  *  3. CORS           — cross-origin policy
  *  4. Compression    — gzip response bodies
  *  5. Body parsing   — JSON and URL-encoded payloads
- *  6. Logging        — Morgan HTTP request log
+ *  6. Logging        — Winston HTTP request logging
  *  7. API routes     — versioned /api/v1 with rate limiting
  *  8. 404 handler    — unmatched routes
  *  9. Error handler  — global error boundary (must be last)
@@ -49,8 +49,8 @@ export const createApp = (): Application => {
   app.use(express.json({ limit: BODY_SIZE_LIMIT }));
   app.use(express.urlencoded({ extended: true, limit: BODY_SIZE_LIMIT }));
 
-  // --- HTTP logging ---
-  app.use(loggerMiddleware);
+  // --- HTTP logging (Winston) ---
+  app.use(requestLoggerMiddleware);
 
   // --- Versioned API (/api/v1) ---
   app.use(API_V1_PREFIX, apiRateLimiter, v1Router);

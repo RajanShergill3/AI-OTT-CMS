@@ -3,7 +3,7 @@
  */
 
 export { securityMiddleware } from './security.middleware.js';
-export { loggerMiddleware } from './logger.middleware.js';
+export { requestLoggerMiddleware } from './request-logger.middleware.js';
 export { requestIdMiddleware } from './request-id.middleware.js';
 export { apiRateLimiter } from './rate-limit.middleware.js';
 export { notFoundHandler } from './not-found.middleware.js';
