@@ -1,10 +1,22 @@
 import { env } from './env.loader.js';
+import type { ConnectOptions } from 'mongoose';
 
+/**
+ * MongoDB / Mongoose connection configuration.
+ * Connection logic lives in src/database/connection.ts.
+ */
 export const databaseConfig = {
   uri: env.MONGODB_URI,
   options: {
     maxPoolSize: 10,
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-  },
+    minPoolSize: 2,
+    serverSelectionTimeoutMS: 5_000,
+    socketTimeoutMS: 45_000,
+    heartbeatFrequencyMS: 10_000,
+    retryWrites: true,
+    retryReads: true,
+    autoIndex: env.NODE_ENV !== 'production',
+  } satisfies ConnectOptions,
 } as const;
+
+export type DatabaseConfig = typeof databaseConfig;

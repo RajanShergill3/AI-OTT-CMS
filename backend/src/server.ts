@@ -1,39 +1,41 @@
 import { createApp } from './app.js';
-import { config, connectDatabase, disconnectDatabase } from './config/index.js';
+import { config, connectDatabase } from './config/index.js';
+import type { Server } from 'node:http';
 
 const startServer = async (): Promise<void> => {
+  const httpServer: { instance: Server | null } = { instance: null };
+
   try {
-    await connectDatabase();
-    console.log('MongoDB connected');
+    await connectDatabase({
+      registerSignalHandlers: true,
+      onShutdown: async () => {
+        if (!httpServer.instance) {
+          return;
+        }
+
+        await new Promise<void>((resolve, reject) => {
+          httpServer.instance!.close((error) => {
+            if (error) {
+              reject(error);
+              return;
+            }
+            resolve();
+          });
+        });
+      },
+      shutdownTimeoutMs: 10_000,
+    });
   } catch (error) {
-    console.error('MongoDB connection failed:', error);
+    console.error('Failed to start server:', error);
     process.exit(1);
   }
 
   const app = createApp();
 
-  const server = app.listen(config.port, () => {
+  httpServer.instance = app.listen(config.port, () => {
     console.log(`Server running on port ${config.port} [${config.env}]`);
     console.log(`API prefix: ${config.apiPrefix}`);
   });
-
-  const shutdown = async (signal: string): Promise<void> => {
-    console.log(`\n${signal} received. Shutting down gracefully...`);
-
-    server.close(async () => {
-      await disconnectDatabase();
-      console.log('Server closed');
-      process.exit(0);
-    });
-
-    setTimeout(() => {
-      console.error('Forced shutdown after timeout');
-      process.exit(1);
-    }, 10000);
-  };
-
-  process.on('SIGTERM', () => void shutdown('SIGTERM'));
-  process.on('SIGINT', () => void shutdown('SIGINT'));
 };
 
 startServer().catch((error: unknown) => {

@@ -1,3 +1,23 @@
+export { env, loadEnv } from './env.loader.js';
+export { databaseConfig } from './database.js';
+export type { DatabaseConfig } from './database.js';
+export { jwtConfig } from './jwt.js';
+export { corsConfig } from './cors.js';
+
+export {
+  connectDatabase,
+  disconnectDatabase,
+  getDatabaseStatus,
+  setShutdownCallback,
+} from '../database/index.js';
+
+export type {
+  ConnectDatabaseOptions,
+  DatabaseReadyState,
+  DatabaseStatus,
+  GracefulShutdownCallback,
+} from '../database/index.js';
+
 import { env, loadEnv } from './env.loader.js';
 
 /**
@@ -47,9 +67,3 @@ export type AppConfig = typeof config;
 export const validateConfig = (): void => {
   loadEnv();
 };
-
-export { env, loadEnv } from './env.loader.js';
-export { databaseConfig } from './database.js';
-export { jwtConfig } from './jwt.js';
-export { corsConfig } from './cors.js';
-export { connectDatabase, disconnectDatabase, getDatabaseStatus } from './connection.js';
