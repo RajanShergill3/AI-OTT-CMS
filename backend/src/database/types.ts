@@ -1,9 +1,17 @@
 /**
- * MongoDB connection state derived from Mongoose readyState.
- * @see https://mongoosejs.com/docs/api/connection.html#Connection.prototype.readyState
+ * MongoDB connection states based on Mongoose connection.readyState.
+ *
+ * 0 = disconnected
+ * 1 = connected
+ * 2 = connecting
+ * 3 = disconnecting
  */
 export type DatabaseReadyState =
-  'disconnected' | 'connected' | 'connecting' | 'disconnecting' | 'unknown';
+  | 'disconnected'
+  | 'connected'
+  | 'connecting'
+  | 'disconnecting'
+  | 'unknown';
 
 export interface DatabaseStatus {
   readyState: DatabaseReadyState;
@@ -15,10 +23,21 @@ export interface DatabaseStatus {
 export type GracefulShutdownCallback = () => Promise<void>;
 
 export interface ConnectDatabaseOptions {
-  /** Register SIGINT / SIGTERM handlers for graceful database shutdown. Default: false */
+  /**
+   * Register SIGINT / SIGTERM handlers.
+   * Default: false
+   */
   registerSignalHandlers?: boolean;
-  /** Async callback invoked before the database connection is closed (e.g. close HTTP server) */
+
+  /**
+   * Callback executed before MongoDB disconnects.
+   * Example: close HTTP server.
+   */
   onShutdown?: GracefulShutdownCallback;
-  /** Force shutdown after this many milliseconds. Default: 10_000 */
+
+  /**
+   * Force shutdown timeout.
+   * Default: 10000 ms
+   */
   shutdownTimeoutMs?: number;
 }

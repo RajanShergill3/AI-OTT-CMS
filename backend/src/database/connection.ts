@@ -1,4 +1,4 @@
-import mongoose, { ConnectionStates } from 'mongoose';
+import mongoose from 'mongoose';
 
 import { databaseConfig } from '../config/database.js';
 import { logger } from '../utils/logger.js';
@@ -9,12 +9,28 @@ import type {
   GracefulShutdownCallback,
 } from './types.js';
 
+/**
+ * Mongoose connection ready state values.
+ *
+ * 0 = disconnected
+ * 1 = connected
+ * 2 = connecting
+ * 3 = disconnecting
+ */
+const STATES = {
+  disconnected: 0,
+  connected: 1,
+  connecting: 2,
+  disconnecting: 3,
+} as const;
+
 const READY_STATE_MAP: Record<number, DatabaseReadyState> = {
-  0: 'disconnected',
-  1: 'connected',
-  2: 'connecting',
-  3: 'disconnecting',
+  [STATES.disconnected]: 'disconnected',
+  [STATES.connected]: 'connected',
+  [STATES.connecting]: 'connecting',
+  [STATES.disconnecting]: 'disconnecting',
 };
+
 
 let listenersAttached = false;
 let shutdownInProgress = false;
@@ -22,8 +38,10 @@ let shutdownCallback: GracefulShutdownCallback | undefined;
 let shutdownTimeoutMs = 10_000;
 
 const mapReadyState = (state: number): DatabaseReadyState => {
-  return READY_STATE_MAP[state] ?? 'unknown';
+  return READY_STATE_MAP[state] ?? 'disconnected';
 };
+
+const maskUri = (uri: string): string => uri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:***@');
 
 const attachConnectionEventListeners = (): void => {
   if (listenersAttached) {
@@ -111,7 +129,7 @@ const registerSignalHandlers = (): void => {
 
 /**
  * Establish a connection to MongoDB using Mongoose.
- * Idempotent — returns immediately if already connected or connecting.
+ * Idempotent — returns immediately if already connected or awaits an in-flight connection.
  *
  * @throws {Error} When the initial connection attempt fails
  */
@@ -131,12 +149,11 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
   }
 
   mongoose.set('strictQuery', true);
-
   attachConnectionEventListeners();
 
-  const currentState = mongoose.connection.readyState;
+  const { connection } = mongoose;
 
-  if (currentState === ConnectionStates.connected) {
+  if (connection.readyState === STATES.connected) {
     logger.debug('MongoDB already connected', { type: 'database' });
     if (shouldRegisterSignals) {
       registerSignalHandlers();
@@ -144,11 +161,23 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
     return;
   }
 
-  if (currentState === ConnectionStates.connecting) {
+  if (connection.readyState === STATES.connecting) {
     logger.debug('MongoDB connection in progress — awaiting existing attempt', {
       type: 'database',
     });
-    await mongoose.connection.asPromise();
+
+    try {
+      await mongoose.connection.asPromise();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown connection error';
+      logger.error('MongoDB in-flight connection failed', {
+        type: 'database',
+        message,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw new Error(`MongoDB connection failed: ${message}`, { cause: error });
+    }
+
     if (shouldRegisterSignals) {
       registerSignalHandlers();
     }
@@ -160,8 +189,8 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
       type: 'database',
       uri: maskUri(databaseConfig.uri),
     });
+
     await mongoose.connect(databaseConfig.uri, databaseConfig.options);
-    logger.info('MongoDB connection established', { type: 'database' });
 
     if (shouldRegisterSignals) {
       registerSignalHandlers();
@@ -182,14 +211,14 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
  * Safe to call multiple times.
  */
 export const disconnectDatabase = async (): Promise<void> => {
-  const currentState = mongoose.connection.readyState;
+  const { connection } = mongoose;
 
-  if (currentState === ConnectionStates.disconnected) {
+  if (connection.readyState === STATES.disconnected) {
     logger.debug('MongoDB already disconnected', { type: 'database' });
     return;
   }
 
-  if (currentState === ConnectionStates.disconnecting) {
+  if (connection.readyState === STATES.disconnecting) {
     logger.debug('MongoDB disconnect already in progress', { type: 'database' });
     await mongoose.connection.asPromise().catch(() => undefined);
     return;
@@ -218,7 +247,7 @@ export const getDatabaseStatus = (): DatabaseStatus => {
 
   return {
     readyState,
-    isConnected: connection.readyState === ConnectionStates.connected,
+    isConnected: connection.readyState === STATES.connected,
     host: connection.host || null,
     name: connection.name || null,
   };
@@ -230,8 +259,4 @@ export const getDatabaseStatus = (): DatabaseStatus => {
  */
 export const setShutdownCallback = (callback: GracefulShutdownCallback): void => {
   shutdownCallback = callback;
-};
-
-const maskUri = (uri: string): string => {
-  return uri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:***@');
 };
