@@ -1,8 +1,41 @@
+import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { config, connectDatabase } from './config/index.js';
 import type { Server } from 'node:http';
 
-const startServer = async (): Promise<void> => {
+const SHUTDOWN_TIMEOUT_MS = 10_000;
+
+const log = (message: string): void => {
+  console.log(`[server] ${new Date().toISOString()} ${message}`);
+};
+
+const logError = (message: string, error?: unknown): void => {
+  console.error(`[server] ${new Date().toISOString()} ${message}`, error ?? '');
+};
+
+/**
+ * Register process-level error handlers to prevent silent crashes.
+ */
+const registerProcessHandlers = (): void => {
+  process.on('unhandledRejection', (reason: unknown) => {
+    logError('Unhandled promise rejection', reason);
+    if (config.isProduction) {
+      process.exit(1);
+    }
+  });
+
+  process.on('uncaughtException', (error: Error) => {
+    logError('Uncaught exception', error);
+    process.exit(1);
+  });
+};
+
+/**
+ * Bootstrap the HTTP server and MongoDB connection.
+ */
+export const startServer = async (): Promise<Server> => {
+  registerProcessHandlers();
+
   const httpServer: { instance: Server | null } = { instance: null };
 
   try {
@@ -13,6 +46,8 @@ const startServer = async (): Promise<void> => {
           return;
         }
 
+        log('Closing HTTP server');
+
         await new Promise<void>((resolve, reject) => {
           httpServer.instance!.close((error) => {
             if (error) {
@@ -22,23 +57,40 @@ const startServer = async (): Promise<void> => {
             resolve();
           });
         });
+
+        log('HTTP server closed');
       },
-      shutdownTimeoutMs: 10_000,
+      shutdownTimeoutMs: SHUTDOWN_TIMEOUT_MS,
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logError('Failed to connect to database', error);
     process.exit(1);
   }
 
   const app = createApp();
 
-  httpServer.instance = app.listen(config.port, () => {
-    console.log(`Server running on port ${config.port} [${config.env}]`);
-    console.log(`API prefix: ${config.apiPrefix}`);
+  return new Promise<Server>((resolve, reject) => {
+    const server = app.listen(config.port, () => {
+      log(`Running on port ${config.port} [${config.env}]`);
+      log(`API: http://localhost:${config.port}/api/v1`);
+      httpServer.instance = server;
+      resolve(server);
+    });
+
+    server.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EADDRINUSE') {
+        logError(`Port ${config.port} is already in use`);
+      }
+      reject(error);
+    });
   });
 };
 
-startServer().catch((error: unknown) => {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-});
+const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
+
+if (isMainModule) {
+  startServer().catch((error: unknown) => {
+    logError('Failed to start server', error);
+    process.exit(1);
+  });
+}

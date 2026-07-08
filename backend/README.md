@@ -90,8 +90,9 @@ Configuration is loaded by `src/config/env.loader.ts` and exposed via `src/confi
 
 - [x] Express app with security middleware
 - [x] MongoDB connection with graceful shutdown
+- [x] Versioned API router (`/api/v1`)
 - [x] Health check endpoint
 - [x] Standardized API response helpers
-- [x] Global error handling
+- [x] Global error handling and 404 handler
 - [ ] Auth API (Milestone M1)
 - [ ] Domain APIs (Milestones M2–M6)

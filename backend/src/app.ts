@@ -1,34 +1,74 @@
 import compression from 'compression';
 import cors from 'cors';
-import express from 'express';
-import helmet from 'helmet';
-import morgan from 'morgan';
+import express, { type Application } from 'express';
 import { corsConfig } from './config/cors.js';
 import { config } from './config/index.js';
-import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import { apiRateLimiter } from './middleware/rate-limit.middleware.js';
-import { createApiRouter } from './routes/index.js';
+import { errorHandler } from './middleware/error.middleware.js';
+import { loggerMiddleware } from './middleware/logger.middleware.js';
+import { notFoundHandler } from './middleware/not-found.middleware.js';
+import { requestIdMiddleware } from './middleware/request-id.middleware.js';
+import { securityMiddleware } from './middleware/security.middleware.js';
+import v1Router from './routes/v1/index.js';
 
-export const createApp = (): express.Application => {
+const BODY_SIZE_LIMIT = '10mb';
+const API_V1_PREFIX = '/api/v1';
+
+/**
+ * Creates and configures the Express application.
+ *
+ * Middleware order (production best practice):
+ *  1. Security       — helmet, disable x-powered-by, trust proxy
+ *  2. Request ID     — correlation ID for logging and errors
+ *  3. CORS           — cross-origin policy
+ *  4. Compression    — gzip response bodies
+ *  5. Body parsing   — JSON and URL-encoded payloads
+ *  6. Logging        — Morgan HTTP request log
+ *  7. API routes     — versioned /api/v1 with rate limiting
+ *  8. 404 handler    — unmatched routes
+ *  9. Error handler  — global error boundary (must be last)
+ */
+export const createApp = (): Application => {
   const app = express();
 
+  // --- Security ---
+  app.disable('x-powered-by');
   app.set('trust proxy', 1);
+  app.use(securityMiddleware);
 
-  app.use(helmet());
+  // --- Request tracing ---
+  app.use(requestIdMiddleware);
+
+  // --- Cross-origin ---
   app.use(cors(corsConfig));
+
+  // --- Performance ---
   app.use(compression());
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  if (!config.isProduction) {
-    app.use(morgan('dev'));
-  } else {
-    app.use(morgan('combined'));
-  }
+  // --- Body parsing ---
+  app.use(express.json({ limit: BODY_SIZE_LIMIT }));
+  app.use(express.urlencoded({ extended: true, limit: BODY_SIZE_LIMIT }));
 
-  app.use(apiRateLimiter);
-  app.use(createApiRouter());
+  // --- HTTP logging ---
+  app.use(loggerMiddleware);
 
+  // --- Versioned API (/api/v1) ---
+  app.use(API_V1_PREFIX, apiRateLimiter, v1Router);
+
+  // --- Root redirect (convenience) ---
+  app.get('/', (_req, res) => {
+    res.status(200).json({
+      success: true,
+      message: 'AI OTT CMS API',
+      data: {
+        version: 'v1',
+        documentation: `${API_V1_PREFIX}/health`,
+        environment: config.env,
+      },
+    });
+  });
+
+  // --- Error handling (must be last) ---
   app.use(notFoundHandler);
   app.use(errorHandler);
 

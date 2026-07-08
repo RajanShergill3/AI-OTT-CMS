@@ -1,11 +1,13 @@
 /**
  * Middleware layer barrel export.
- *
- * Cross-cutting Express middleware — auth, RBAC, validation, errors, rate limiting.
  */
 
+export { securityMiddleware } from './security.middleware.js';
+export { loggerMiddleware } from './logger.middleware.js';
+export { requestIdMiddleware } from './request-id.middleware.js';
 export { apiRateLimiter } from './rate-limit.middleware.js';
-export { AppError, errorHandler, notFoundHandler } from './error.middleware.js';
+export { notFoundHandler } from './not-found.middleware.js';
+export { AppError, errorHandler } from './error.middleware.js';
 
 // Export as implemented:
 // export * from './auth.middleware.js';
