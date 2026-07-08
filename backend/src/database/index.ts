@@ -4,7 +4,6 @@ export {
   getDatabaseStatus,
   setShutdownCallback,
 } from './connection.js';
-
 export type {
   ConnectDatabaseOptions,
   DatabaseReadyState,

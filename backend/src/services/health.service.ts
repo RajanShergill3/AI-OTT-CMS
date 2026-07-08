@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+
 import { config } from '../config/index.js';
 import type { HealthCheckResult } from '../types/health.types.js';
 

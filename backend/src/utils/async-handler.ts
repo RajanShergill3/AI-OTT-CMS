@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction, RequestHandler } from 'express';
+import type { NextFunction, Request, RequestHandler, Response } from 'express';
 
 type RequestHandlerFn = (req: Request, res: Response, next: NextFunction) => void | Promise<void>;
 

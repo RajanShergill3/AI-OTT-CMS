@@ -11,7 +11,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint src",
-    "format": "prettier --write \"src/**/*.ts\""
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\""
   },
   "keywords": [
     "ott",
@@ -43,6 +45,9 @@
     "@types/node": "^22.14.1",
     "eslint": "^9.24.0",
     "eslint-config-prettier": "^10.1.2",
+    "eslint-plugin-n": "^18.2.1",
+    "eslint-plugin-simple-import-sort": "^13.0.0",
+    "globals": "^17.7.0",
     "prettier": "^3.5.3",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",

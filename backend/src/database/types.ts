@@ -3,11 +3,7 @@
  * @see https://mongoosejs.com/docs/api/connection.html#Connection.prototype.readyState
  */
 export type DatabaseReadyState =
-  | 'disconnected'
-  | 'connected'
-  | 'connecting'
-  | 'disconnecting'
-  | 'unknown';
+  'disconnected' | 'connected' | 'connecting' | 'disconnecting' | 'unknown';
 
 export interface DatabaseStatus {
   readyState: DatabaseReadyState;

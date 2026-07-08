@@ -1,13 +1,14 @@
 import compression from 'compression';
 import cors from 'cors';
 import express, { type Application } from 'express';
+
 import { corsConfig } from './config/cors.js';
 import { config } from './config/index.js';
-import { apiRateLimiter } from './middleware/rate-limit.middleware.js';
 import { errorHandler } from './middleware/error.middleware.js';
-import { requestLoggerMiddleware } from './middleware/request-logger.middleware.js';
 import { notFoundHandler } from './middleware/not-found.middleware.js';
+import { apiRateLimiter } from './middleware/rate-limit.middleware.js';
 import { requestIdMiddleware } from './middleware/request-id.middleware.js';
+import { requestLoggerMiddleware } from './middleware/request-logger.middleware.js';
 import { securityMiddleware } from './middleware/security.middleware.js';
 import v1Router from './routes/v1/index.js';
 

@@ -1,5 +1,6 @@
-import { env } from './env.loader.js';
 import type { ConnectOptions } from 'mongoose';
+
+import { env } from './env.loader.js';
 
 /**
  * MongoDB / Mongoose connection configuration.

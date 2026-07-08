@@ -1,4 +1,5 @@
-import mongoose from 'mongoose';
+import mongoose, { ConnectionStates } from 'mongoose';
+
 import { databaseConfig } from '../config/database.js';
 import { logger } from '../utils/logger.js';
 import type {
@@ -115,8 +116,11 @@ const registerSignalHandlers = (): void => {
  * @throws {Error} When the initial connection attempt fails
  */
 export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Promise<void> => {
-  const { registerSignalHandlers: shouldRegisterSignals = false, onShutdown, shutdownTimeoutMs: timeout } =
-    options;
+  const {
+    registerSignalHandlers: shouldRegisterSignals = false,
+    onShutdown,
+    shutdownTimeoutMs: timeout,
+  } = options;
 
   if (timeout !== undefined) {
     shutdownTimeoutMs = timeout;
@@ -132,7 +136,7 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
 
   const currentState = mongoose.connection.readyState;
 
-  if (currentState === 1) {
+  if (currentState === ConnectionStates.connected) {
     logger.debug('MongoDB already connected', { type: 'database' });
     if (shouldRegisterSignals) {
       registerSignalHandlers();
@@ -140,8 +144,10 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
     return;
   }
 
-  if (currentState === 2) {
-    logger.debug('MongoDB connection in progress — awaiting existing attempt', { type: 'database' });
+  if (currentState === ConnectionStates.connecting) {
+    logger.debug('MongoDB connection in progress — awaiting existing attempt', {
+      type: 'database',
+    });
     await mongoose.connection.asPromise();
     if (shouldRegisterSignals) {
       registerSignalHandlers();
@@ -178,12 +184,12 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
 export const disconnectDatabase = async (): Promise<void> => {
   const currentState = mongoose.connection.readyState;
 
-  if (currentState === 0) {
+  if (currentState === ConnectionStates.disconnected) {
     logger.debug('MongoDB already disconnected', { type: 'database' });
     return;
   }
 
-  if (currentState === 3) {
+  if (currentState === ConnectionStates.disconnecting) {
     logger.debug('MongoDB disconnect already in progress', { type: 'database' });
     await mongoose.connection.asPromise().catch(() => undefined);
     return;
@@ -212,7 +218,7 @@ export const getDatabaseStatus = (): DatabaseStatus => {
 
   return {
     readyState,
-    isConnected: connection.readyState === 1,
+    isConnected: connection.readyState === ConnectionStates.connected,
     host: connection.host || null,
     name: connection.name || null,
   };

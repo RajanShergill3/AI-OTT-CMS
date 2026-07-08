@@ -1,4 +1,5 @@
 import rateLimit from 'express-rate-limit';
+
 import { config } from '../config/index.js';
 import { ERROR_CODES } from '../constants/error-codes.js';
 

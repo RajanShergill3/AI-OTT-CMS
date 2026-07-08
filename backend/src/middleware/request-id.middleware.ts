@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import type { Request, Response, NextFunction } from 'express';
+
+import type { NextFunction, Request, Response } from 'express';
 
 /**
  * Attaches a unique request ID for tracing across logs and error responses.
@@ -7,7 +8,8 @@ import type { Request, Response, NextFunction } from 'express';
  */
 export const requestIdMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const incoming = req.headers['x-request-id'];
-  const requestId = typeof incoming === 'string' && incoming.trim() !== '' ? incoming : randomUUID();
+  const requestId =
+    typeof incoming === 'string' && incoming.trim() !== '' ? incoming : randomUUID();
 
   req.headers['x-request-id'] = requestId;
   res.setHeader('X-Request-Id', requestId);

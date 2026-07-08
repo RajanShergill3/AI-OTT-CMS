@@ -1,8 +1,9 @@
+import type { Server } from 'node:http';
 import { fileURLToPath } from 'node:url';
+
 import { createApp } from './app.js';
 import { config, connectDatabase } from './config/index.js';
 import { logger } from './utils/logger.js';
-import type { Server } from 'node:http';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
