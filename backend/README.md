@@ -38,6 +38,8 @@ Request → routes/ → controllers/ → services/ → models/ → MongoDB
 | **Services** | `src/services/` | Business logic and orchestration |
 | **Models** | `src/models/` | Mongoose schemas and database access |
 
+> Full directory tree and folder purposes: [docs/DIRECTORY_STRUCTURE.md](docs/DIRECTORY_STRUCTURE.md)
+
 ## Dependencies
 
 ### Production

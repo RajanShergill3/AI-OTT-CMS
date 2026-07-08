@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { HTTP_STATUS } from '../constants/http-status.js';
-import { getDatabaseStatus } from '../database/connection.js';
+import { getDatabaseStatus } from '../config/connection.js';
 import { sendSuccess } from '../utils/api-response.js';
 
 export const getHealth = (_req: Request, res: Response): void => {

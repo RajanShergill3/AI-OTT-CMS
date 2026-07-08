@@ -1,6 +1,6 @@
 import { createApp } from './app.js';
 import { config, validateConfig } from './config/index.js';
-import { connectDatabase, disconnectDatabase } from './database/connection.js';
+import { connectDatabase, disconnectDatabase } from './config/connection.js';
 
 const startServer = async (): Promise<void> => {
   validateConfig();

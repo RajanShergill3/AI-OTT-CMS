@@ -1,0 +1,4 @@
+/**
+ * Pagination helpers — placeholder.
+ */
+export {};

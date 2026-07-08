@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { databaseConfig } from '../config/database.js';
+import { databaseConfig } from './database.js';
 
 export const connectDatabase = async (): Promise<void> => {
   mongoose.set('strictQuery', true);

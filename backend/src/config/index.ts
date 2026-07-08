@@ -48,3 +48,8 @@ export const validateConfig = (): void => {
     required('MONGODB_URI');
   }
 };
+
+export { databaseConfig } from './database.js';
+export { jwtConfig } from './jwt.js';
+export { corsConfig } from './cors.js';
+export { connectDatabase, disconnectDatabase, getDatabaseStatus } from './connection.js';
