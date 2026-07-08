@@ -5,3 +5,4 @@
  */
 
 export type { AuthenticatedRequest } from './auth.types.js';
+export type { HealthCheckResult } from './health.types.js';

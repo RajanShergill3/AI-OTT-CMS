@@ -5,6 +5,8 @@
  * Controllers call services; services never handle HTTP directly.
  */
 
+export { getHealthCheck } from './health.service.js';
+
 // Export services as implemented:
 // export * from './auth.service.js';
 // export * from './token.service.js';
