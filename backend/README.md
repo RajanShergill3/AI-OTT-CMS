@@ -71,7 +71,20 @@ Request → routes/ → controllers/ → services/ → models/ → MongoDB
 
 ## Environment Variables
 
-See `.env.example` for all variables.
+See `.env.example` for all required variables. The server **fails fast** at startup if any are missing or invalid.
+
+| Variable | Description |
+|---|---|
+| `NODE_ENV` | `development`, `production`, or `test` |
+| `PORT` | HTTP server port |
+| `MONGODB_URI` | MongoDB connection string |
+| `JWT_SECRET` | Access token signing secret (min 32 chars) |
+| `JWT_EXPIRES_IN` | Access token lifetime (e.g. `15m`) |
+| `REFRESH_TOKEN_SECRET` | Refresh token signing secret (min 32 chars) |
+| `REFRESH_TOKEN_EXPIRES_IN` | Refresh token lifetime (e.g. `7d`) |
+| `CLIENT_URL` | Frontend URL for CORS (e.g. `http://localhost:5173`) |
+
+Configuration is loaded by `src/config/env.loader.ts` and exposed via `src/config/index.ts`.
 
 ## Project Status
 

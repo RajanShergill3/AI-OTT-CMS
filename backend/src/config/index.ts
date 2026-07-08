@@ -1,54 +1,54 @@
-import dotenv from 'dotenv';
+import { env, loadEnv } from './env.loader.js';
 
-dotenv.config();
-
-const required = (key: string): string => {
-  const value = process.env[key];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return value;
-};
-
-const optional = (key: string, defaultValue: string): string => {
-  return process.env[key] ?? defaultValue;
-};
-
+/**
+ * Application configuration module.
+ * Built from validated environment variables — see env.loader.ts.
+ */
 export const config = {
-  env: optional('NODE_ENV', 'development'),
-  port: parseInt(optional('PORT', '5000'), 10),
-  apiPrefix: optional('API_PREFIX', '/api/v1'),
-  isProduction: optional('NODE_ENV', 'development') === 'production',
+  env: env.NODE_ENV,
+  port: env.PORT,
+  apiPrefix: env.API_PREFIX,
+  isProduction: env.NODE_ENV === 'production',
+  isDevelopment: env.NODE_ENV === 'development',
+  isTest: env.NODE_ENV === 'test',
 
   mongodb: {
-    uri: optional('MONGODB_URI', 'mongodb://localhost:27017/ai-ott-cms'),
+    uri: env.MONGODB_URI,
   },
 
   jwt: {
-    secret: optional('JWT_SECRET', 'dev-jwt-secret-change-in-production'),
-    refreshSecret: optional('JWT_REFRESH_SECRET', 'dev-refresh-secret-change-in-production'),
-    accessExpiresIn: optional('JWT_ACCESS_EXPIRES_IN', '15m'),
-    refreshExpiresIn: optional('JWT_REFRESH_EXPIRES_IN', '7d'),
+    secret: env.JWT_SECRET,
+    expiresIn: env.JWT_EXPIRES_IN,
+    refreshSecret: env.REFRESH_TOKEN_SECRET,
+    refreshExpiresIn: env.REFRESH_TOKEN_EXPIRES_IN,
+  },
+
+  client: {
+    url: env.CLIENT_URL,
   },
 
   cors: {
-    origin: optional('CORS_ORIGIN', 'http://localhost:5173'),
+    origin: env.CLIENT_URL,
   },
 
   rateLimit: {
-    windowMs: parseInt(optional('RATE_LIMIT_WINDOW_MS', '900000'), 10),
-    maxRequests: parseInt(optional('RATE_LIMIT_MAX_REQUESTS', '100'), 10),
+    windowMs: env.RATE_LIMIT_WINDOW_MS,
+    maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
   },
 } as const;
 
+export type AppConfig = typeof config;
+
+/**
+ * Explicit validation entry point.
+ * Environment is already validated when this module is imported;
+ * calling this re-runs validation (e.g. in tests after env changes).
+ */
 export const validateConfig = (): void => {
-  if (config.isProduction) {
-    required('JWT_SECRET');
-    required('JWT_REFRESH_SECRET');
-    required('MONGODB_URI');
-  }
+  loadEnv();
 };
 
+export { env, loadEnv } from './env.loader.js';
 export { databaseConfig } from './database.js';
 export { jwtConfig } from './jwt.js';
 export { corsConfig } from './cors.js';

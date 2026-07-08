@@ -1,8 +1,8 @@
-import { config } from './index.js';
+import { env } from './env.loader.js';
 
 export const jwtConfig = {
-  secret: config.jwt.secret,
-  refreshSecret: config.jwt.refreshSecret,
-  accessExpiresIn: config.jwt.accessExpiresIn,
-  refreshExpiresIn: config.jwt.refreshExpiresIn,
+  secret: env.JWT_SECRET,
+  expiresIn: env.JWT_EXPIRES_IN,
+  refreshSecret: env.REFRESH_TOKEN_SECRET,
+  refreshExpiresIn: env.REFRESH_TOKEN_EXPIRES_IN,
 } as const;

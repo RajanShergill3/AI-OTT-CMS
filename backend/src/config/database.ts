@@ -1,7 +1,7 @@
-import { config } from './index.js';
+import { env } from './env.loader.js';
 
 export const databaseConfig = {
-  uri: config.mongodb.uri,
+  uri: env.MONGODB_URI,
   options: {
     maxPoolSize: 10,
     serverSelectionTimeoutMS: 5000,

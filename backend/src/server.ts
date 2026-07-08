@@ -1,10 +1,7 @@
 import { createApp } from './app.js';
-import { config, validateConfig } from './config/index.js';
-import { connectDatabase, disconnectDatabase } from './config/connection.js';
+import { config, connectDatabase, disconnectDatabase } from './config/index.js';
 
 const startServer = async (): Promise<void> => {
-  validateConfig();
-
   try {
     await connectDatabase();
     console.log('MongoDB connected');
