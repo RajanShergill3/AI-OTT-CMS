@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 
-import type { UserRole } from '../models/user.model.js';
+export type { ChangePasswordInput, LoginInput, RefreshTokenInput, RegisterInput } from '../validators/auth.validator.js';
 
 export type AuthenticatedRequest = Request & {
   user: NonNullable<Request['user']>;
@@ -32,21 +32,4 @@ export interface UserProfileResponse extends AuthUserResponse {
   lastLogin: string | null;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface RegisterInput {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role?: UserRole;
-}
-
-export interface LoginInput {
-  email: string;
-  password: string;
-}
-
-export interface RefreshTokenInput {
-  refreshToken?: string;
 }

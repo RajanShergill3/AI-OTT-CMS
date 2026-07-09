@@ -5,13 +5,20 @@
  * Decoupled from controllers for reuse and testability.
  */
 
-// Export validators as implemented:
-// export * from './auth.validator.js';
-// export * from './movie.validator.js';
-// export * from './category.validator.js';
-// export * from './user.validator.js';
-// export * from './ai.validator.js';
-// export * from './settings.validator.js';
-// export * from './common.validator.js';
-
-export {};
+export type {
+  ChangePasswordInput,
+  LoginInput,
+  RefreshTokenInput,
+  RegisterInput,
+} from './auth.validator.js';
+export {
+  changePasswordSchema,
+  loginSchema,
+  refreshTokenSchema,
+  registerSchema,
+  validateChangePasswordBody,
+  validateLoginBody,
+  validateRefreshBody,
+  validateRegisterBody,
+} from './auth.validator.js';
+export type { ValidationErrorDetail, ValidationResult } from './zod.util.js';

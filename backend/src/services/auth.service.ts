@@ -1,6 +1,7 @@
 import { TOKEN_TYPE } from '../constants/auth.constants.js';
 import { ERROR_CODES } from '../constants/error-codes.js';
 import { HTTP_STATUS } from '../constants/http-status.js';
+import { AuthErrors, fromJwtVerificationError } from '../errors/auth.errors.js';
 import { AppError } from '../middleware/error.middleware.js';
 import type { IUser, UserDocument } from '../models/user.model.js';
 import { User } from '../models/user.model.js';
@@ -56,11 +57,7 @@ const toUserProfileResponse = (user: UserDocument): UserProfileResponse => {
 
 const assertActiveUser = (user: UserDocument): void => {
   if (!user.isActive) {
-    throw new AppError(
-      'Your account has been deactivated. Contact an administrator.',
-      HTTP_STATUS.FORBIDDEN,
-      ERROR_CODES.ACCOUNT_INACTIVE,
-    );
+    throw AuthErrors.inactiveUser();
   }
 };
 
@@ -105,11 +102,7 @@ export const register = async (input: RegisterInput): Promise<AuthSessionRespons
   const existingUser = await User.findOne({ email: input.email.toLowerCase() });
 
   if (existingUser) {
-    throw new AppError(
-      'Email already registered',
-      HTTP_STATUS.CONFLICT,
-      ERROR_CODES.DUPLICATE_EMAIL,
-    );
+    throw AuthErrors.duplicateEmail();
   }
 
   try {
@@ -125,11 +118,7 @@ export const register = async (input: RegisterInput): Promise<AuthSessionRespons
     return createAuthSession(user);
   } catch (error) {
     if (isDuplicateKeyError(error)) {
-      throw new AppError(
-        'Email already registered',
-        HTTP_STATUS.CONFLICT,
-        ERROR_CODES.DUPLICATE_EMAIL,
-      );
+      throw AuthErrors.duplicateEmail();
     }
 
     throw error;
@@ -143,11 +132,7 @@ export const login = async (input: LoginInput): Promise<AuthSessionResponse> => 
   const user = await findUserByEmailWithPassword(input.email);
 
   if (!user) {
-    throw new AppError(
-      'Invalid email or password',
-      HTTP_STATUS.UNAUTHORIZED,
-      ERROR_CODES.INVALID_CREDENTIALS,
-    );
+    throw AuthErrors.invalidCredentials();
   }
 
   assertActiveUser(user);
@@ -155,11 +140,7 @@ export const login = async (input: LoginInput): Promise<AuthSessionResponse> => 
   const isPasswordValid = await comparePassword(input.password, user.password);
 
   if (!isPasswordValid) {
-    throw new AppError(
-      'Invalid email or password',
-      HTTP_STATUS.UNAUTHORIZED,
-      ERROR_CODES.INVALID_CREDENTIALS,
-    );
+    throw AuthErrors.invalidCredentials();
   }
 
   user.lastLogin = new Date();
@@ -173,11 +154,7 @@ export const login = async (input: LoginInput): Promise<AuthSessionResponse> => 
  */
 export const refreshSession = async (refreshToken: string): Promise<AuthTokenResponse> => {
   if (!refreshToken) {
-    throw new AppError(
-      'Refresh token is invalid or expired. Please log in again.',
-      HTTP_STATUS.UNAUTHORIZED,
-      ERROR_CODES.INVALID_REFRESH_TOKEN,
-    );
+    throw AuthErrors.refreshTokenMissing();
   }
 
   try {
@@ -185,11 +162,7 @@ export const refreshSession = async (refreshToken: string): Promise<AuthTokenRes
     const user = await findUserById(payload.userId);
 
     if (!user) {
-      throw new AppError(
-        'Refresh token is invalid or expired. Please log in again.',
-        HTTP_STATUS.UNAUTHORIZED,
-        ERROR_CODES.INVALID_REFRESH_TOKEN,
-      );
+      throw AuthErrors.refreshTokenInvalid();
     }
 
     assertActiveUser(user);
@@ -201,11 +174,7 @@ export const refreshSession = async (refreshToken: string): Promise<AuthTokenRes
     }
 
     if (error instanceof JwtVerificationError) {
-      throw new AppError(
-        'Refresh token is invalid or expired. Please log in again.',
-        HTTP_STATUS.UNAUTHORIZED,
-        ERROR_CODES.INVALID_REFRESH_TOKEN,
-      );
+      throw fromJwtVerificationError(error, 'refresh');
     }
 
     throw error;
