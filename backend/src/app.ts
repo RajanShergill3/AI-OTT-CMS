@@ -4,6 +4,7 @@ import express, { type Application } from 'express';
 
 import { corsConfig } from './config/cors.js';
 import { config } from './config/index.js';
+import { authOpenApiSpec, swaggerServe, swaggerSetup } from './config/swagger.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { notFoundHandler } from './middleware/not-found.middleware.js';
 import { apiRateLimiter } from './middleware/rate-limit.middleware.js';
@@ -53,6 +54,12 @@ export const createApp = (): Application => {
   // --- HTTP logging (Winston) ---
   app.use(requestLoggerMiddleware);
 
+  // --- API documentation (Swagger UI) ---
+  app.get('/api/docs/openapi.json', (_req, res) => {
+    res.status(200).json(authOpenApiSpec);
+  });
+  app.use('/api/docs', swaggerServe, swaggerSetup);
+
   // --- Versioned API (/api/v1) ---
   app.use(API_V1_PREFIX, apiRateLimiter, v1Router);
 
@@ -63,7 +70,7 @@ export const createApp = (): Application => {
       message: 'AI OTT CMS API',
       data: {
         version: 'v1',
-        documentation: `${API_V1_PREFIX}/health`,
+        documentation: '/api/docs',
         environment: config.env,
       },
     });

@@ -1,0 +1,926 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AI OTT CMS — Authentication API",
+    "description": "Authentication endpoints for the AI OTT CMS REST API.\n\n## Authentication\nProtected endpoints require a JWT access token in the `Authorization` header:\n\n```\nAuthorization: Bearer <access_token>\n```\n\n## Refresh tokens\nRegister and Login set an `HttpOnly` `refreshToken` cookie. The Refresh endpoint accepts the cookie or a `refreshToken` field in the request body.\n\n## Response envelope\nAll JSON responses use a consistent structure with `success`, optional `message`, `data` or `error`, and `meta`.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "AI OTT CMS API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api/v1",
+      "description": "Local development"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User registration, login, token refresh, logout, and profile"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register a new user",
+        "description": "Creates a new user account and returns access and refresh tokens. The refresh token is also set as an HttpOnly cookie.",
+        "operationId": "register",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              },
+              "examples": {
+                "editor": {
+                  "summary": "Register as Editor",
+                  "value": {
+                    "firstName": "Jane",
+                    "lastName": "Editor",
+                    "email": "editor@ottcms.com",
+                    "password": "SecurePass123!",
+                    "role": "EDITOR"
+                  }
+                },
+                "viewer": {
+                  "summary": "Register as Viewer (default role)",
+                  "value": {
+                    "firstName": "John",
+                    "lastName": "Viewer",
+                    "email": "viewer@ottcms.com",
+                    "password": "SecurePass123!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registration successful",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly refresh token cookie",
+                "schema": {
+                  "type": "string",
+                  "example": "refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; Path=/api/v1/auth; HttpOnly; SameSite=Strict"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionSuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "Registration successful",
+                  "data": {
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2NjVmMWEyYjNjNGQ1ZTZmN2E4YjljMGQiLCJlbWFpbCI6ImVkaXRvckBvdHRjbXMuY29tIiwicm9sZSI6IkVESVRPUiIsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NTIwNjQwMDAsImV4cCI6MTc1MjA2NDkwMCwiaXNzIjoiYWktb3R0LWNtcyIsImF1ZCI6ImFpLW90dC1jbXMtYXBpIn0.example",
+                    "expiresIn": 900,
+                    "tokenType": "Bearer",
+                    "user": {
+                      "id": "665f1a2b3c4d5e6f7a8b9c0d",
+                      "email": "editor@ottcms.com",
+                      "firstName": "Jane",
+                      "lastName": "Editor",
+                      "displayName": "Jane Editor",
+                      "role": "editor",
+                      "avatarUrl": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "409": {
+            "$ref": "#/components/responses/DuplicateEmailError"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login",
+        "description": "Authenticates a user with email and password. Returns access token in the body and sets refresh token as an HttpOnly cookie.",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "email": "editor@ottcms.com",
+                "password": "SecurePass123!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly refresh token cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionSuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "Login successful",
+                  "data": {
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example",
+                    "expiresIn": 900,
+                    "tokenType": "Bearer",
+                    "user": {
+                      "id": "665f1a2b3c4d5e6f7a8b9c0d",
+                      "email": "editor@ottcms.com",
+                      "firstName": "Jane",
+                      "lastName": "Editor",
+                      "displayName": "Jane Editor",
+                      "role": "editor",
+                      "avatarUrl": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/InvalidCredentialsError"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccountInactiveError"
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Refresh access token",
+        "description": "Exchanges a valid refresh token (cookie or body) for a new access token and rotated refresh token.",
+        "operationId": "refreshToken",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              },
+              "examples": {
+                "withBody": {
+                  "summary": "Refresh token in body",
+                  "value": {
+                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh.example"
+                  }
+                },
+                "emptyBody": {
+                  "summary": "Use HttpOnly cookie (empty body)",
+                  "value": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenSuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "Token refreshed successfully",
+                  "data": {
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.new.example",
+                    "expiresIn": 900,
+                    "tokenType": "Bearer"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refresh token missing, invalid, or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "missing": {
+                    "summary": "Refresh token required",
+                    "value": {
+                      "success": false,
+                      "error": {
+                        "code": "INVALID_REFRESH_TOKEN",
+                        "message": "Refresh token is required"
+                      },
+                      "meta": {
+                        "timestamp": "2026-07-09T10:00:00.000Z"
+                      }
+                    }
+                  },
+                  "invalid": {
+                    "summary": "Invalid refresh token",
+                    "value": {
+                      "success": false,
+                      "error": {
+                        "code": "INVALID_REFRESH_TOKEN",
+                        "message": "Refresh token is invalid. Please log in again."
+                      },
+                      "meta": {
+                        "timestamp": "2026-07-09T10:00:00.000Z"
+                      }
+                    }
+                  },
+                  "expired": {
+                    "summary": "Expired refresh token",
+                    "value": {
+                      "success": false,
+                      "error": {
+                        "code": "TOKEN_EXPIRED",
+                        "message": "Refresh token has expired. Please log in again."
+                      },
+                      "meta": {
+                        "timestamp": "2026-07-09T10:00:00.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Logout",
+        "description": "Ends the current session and clears the refresh token cookie.",
+        "operationId": "logout",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              },
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Logout successful — no response body"
+          },
+          "401": {
+            "description": "Access token missing, invalid, or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "missing": {
+                    "summary": "Access token missing",
+                    "value": {
+                      "success": false,
+                      "error": {
+                        "code": "UNAUTHORIZED",
+                        "message": "Access token is missing"
+                      },
+                      "meta": {
+                        "timestamp": "2026-07-09T10:00:00.000Z"
+                      }
+                    }
+                  },
+                  "invalid": {
+                    "summary": "Invalid access token",
+                    "value": {
+                      "success": false,
+                      "error": {
+                        "code": "INVALID_TOKEN",
+                        "message": "Access token is invalid"
+                      },
+                      "meta": {
+                        "timestamp": "2026-07-09T10:00:00.000Z"
+                      }
+                    }
+                  },
+                  "expired": {
+                    "summary": "Expired access token",
+                    "value": {
+                      "success": false,
+                      "error": {
+                        "code": "TOKEN_EXPIRED",
+                        "message": "Access token has expired"
+                      },
+                      "meta": {
+                        "timestamp": "2026-07-09T10:00:00.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/profile": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get user profile",
+        "description": "Returns the authenticated user's profile information.",
+        "operationId": "getProfile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileSuccessResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "Profile retrieved successfully",
+                  "data": {
+                    "id": "665f1a2b3c4d5e6f7a8b9c0d",
+                    "email": "editor@ottcms.com",
+                    "firstName": "Jane",
+                    "lastName": "Editor",
+                    "displayName": "Jane Editor",
+                    "role": "editor",
+                    "avatarUrl": null,
+                    "isActive": true,
+                    "lastLogin": "2026-07-09T09:30:00.000Z",
+                    "createdAt": "2026-01-15T08:00:00.000Z",
+                    "updatedAt": "2026-07-09T09:30:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access token missing, invalid, or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "missing": {
+                    "summary": "Access token missing",
+                    "value": {
+                      "success": false,
+                      "error": {
+                        "code": "UNAUTHORIZED",
+                        "message": "Access token is missing"
+                      },
+                      "meta": {
+                        "timestamp": "2026-07-09T10:00:00.000Z"
+                      }
+                    }
+                  },
+                  "invalid": {
+                    "summary": "Invalid access token",
+                    "value": {
+                      "success": false,
+                      "error": {
+                        "code": "INVALID_TOKEN",
+                        "message": "Access token is invalid"
+                      },
+                      "meta": {
+                        "timestamp": "2026-07-09T10:00:00.000Z"
+                      }
+                    }
+                  },
+                  "expired": {
+                    "summary": "Expired access token",
+                    "value": {
+                      "success": false,
+                      "error": {
+                        "code": "TOKEN_EXPIRED",
+                        "message": "Access token has expired"
+                      },
+                      "meta": {
+                        "timestamp": "2026-07-09T10:00:00.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT access token obtained from Register, Login, or Refresh endpoints.\n\nExample: `Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`"
+      }
+    },
+    "schemas": {
+      "UserRole": {
+        "type": "string",
+        "enum": ["ADMIN", "EDITOR", "VIEWER"],
+        "description": "User role (stored uppercase; returned lowercase in responses)"
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["firstName", "lastName", "email", "password"],
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "example": "Jane"
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "example": "Editor"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254,
+            "example": "editor@ottcms.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8,
+            "maxLength": 128,
+            "example": "SecurePass123!"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "editor@ottcms.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "example": "SecurePass123!"
+          }
+        }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Optional if refresh token is sent via HttpOnly cookie",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh.example"
+          }
+        }
+      },
+      "AuthUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "665f1a2b3c4d5e6f7a8b9c0d"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "editor@ottcms.com"
+          },
+          "firstName": {
+            "type": "string",
+            "example": "Jane"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Editor"
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Jane Editor"
+          },
+          "role": {
+            "type": "string",
+            "example": "editor"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
+        }
+      },
+      "UserProfile": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AuthUser"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "isActive": {
+                "type": "boolean",
+                "example": true
+              },
+              "lastLogin": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true,
+                "example": "2026-07-09T09:30:00.000Z"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2026-01-15T08:00:00.000Z"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2026-07-09T09:30:00.000Z"
+              }
+            }
+          }
+        ]
+      },
+      "AuthSessionData": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "JWT access token"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "Access token lifetime in seconds",
+            "example": 900
+          },
+          "tokenType": {
+            "type": "string",
+            "enum": ["Bearer"],
+            "example": "Bearer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AuthUser"
+          }
+        }
+      },
+      "AuthTokenData": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "example": 900
+          },
+          "tokenType": {
+            "type": "string",
+            "enum": ["Bearer"],
+            "example": "Bearer"
+          }
+        }
+      },
+      "ApiErrorDetail": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "example": "email"
+          },
+          "message": {
+            "type": "string",
+            "example": "Email must be a valid email address"
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "VALIDATION_ERROR"
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiErrorDetail"
+            }
+          }
+        }
+      },
+      "ApiMeta": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-07-09T10:00:00.000Z"
+          }
+        }
+      },
+      "ApiErrorResponse": {
+        "type": "object",
+        "required": ["success", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [false]
+          },
+          "error": {
+            "$ref": "#/components/schemas/ApiError"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ApiMeta"
+          }
+        }
+      },
+      "AuthSessionSuccessResponse": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AuthSessionData"
+          }
+        }
+      },
+      "AuthTokenSuccessResponse": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AuthTokenData"
+          }
+        }
+      },
+      "ProfileSuccessResponse": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserProfile"
+          }
+        }
+      }
+    },
+    "examples": {
+      "UnauthorizedMissingToken": {
+        "summary": "Access token missing",
+        "value": {
+          "success": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "Access token is missing"
+          },
+          "meta": {
+            "timestamp": "2026-07-09T10:00:00.000Z"
+          }
+        }
+      },
+      "InvalidToken": {
+        "summary": "Invalid access token",
+        "value": {
+          "success": false,
+          "error": {
+            "code": "INVALID_TOKEN",
+            "message": "Access token is invalid"
+          },
+          "meta": {
+            "timestamp": "2026-07-09T10:00:00.000Z"
+          }
+        }
+      },
+      "ExpiredToken": {
+        "summary": "Expired access token",
+        "value": {
+          "success": false,
+          "error": {
+            "code": "TOKEN_EXPIRED",
+            "message": "Access token has expired"
+          },
+          "meta": {
+            "timestamp": "2026-07-09T10:00:00.000Z"
+          }
+        }
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Request validation failed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Validation failed",
+                "details": [
+                  {
+                    "field": "email",
+                    "message": "Email must be a valid email address"
+                  },
+                  {
+                    "field": "password",
+                    "message": "Password must be at least 8 characters"
+                  }
+                ]
+              },
+              "meta": {
+                "timestamp": "2026-07-09T10:00:00.000Z"
+              }
+            }
+          }
+        }
+      },
+      "InvalidCredentialsError": {
+        "description": "Invalid email or password",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "INVALID_CREDENTIALS",
+                "message": "Invalid email or password"
+              },
+              "meta": {
+                "timestamp": "2026-07-09T10:00:00.000Z"
+              }
+            }
+          }
+        }
+      },
+      "DuplicateEmailError": {
+        "description": "Email already registered",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "DUPLICATE_EMAIL",
+                "message": "Email already registered"
+              },
+              "meta": {
+                "timestamp": "2026-07-09T10:00:00.000Z"
+              }
+            }
+          }
+        }
+      },
+      "AccountInactiveError": {
+        "description": "User account is deactivated",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "ACCOUNT_INACTIVE",
+                "message": "Your account has been deactivated. Contact an administrator."
+              },
+              "meta": {
+                "timestamp": "2026-07-09T10:00:00.000Z"
+              }
+            }
+          }
+        }
+      },
+      "ForbiddenError": {
+        "description": "Insufficient permissions",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "FORBIDDEN",
+                "message": "You do not have permission to access this resource"
+              },
+              "meta": {
+                "timestamp": "2026-07-09T10:00:00.000Z"
+              }
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "NOT_FOUND",
+                "message": "User not found"
+              },
+              "meta": {
+                "timestamp": "2026-07-09T10:00:00.000Z"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
