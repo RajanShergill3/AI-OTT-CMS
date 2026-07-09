@@ -14,15 +14,18 @@ export default tseslint.config(
       'coverage/**',
       '*.log',
       'build/**',
+      'eslint.config.js',
+      '.eslintrc.cjs',
     ],
   },
   eslint.configs.recommended,
-  ...tseslint.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
-  n.configs['flat/recommended-module'],
   prettier,
   {
     files: ['src/**/*.ts'],
+    extends: [
+      ...tseslint.configs.recommended,
+      ...tseslint.configs.recommendedTypeChecked,
+    ],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -86,7 +89,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.test.ts', '**/*.spec.ts'],
+    files: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',

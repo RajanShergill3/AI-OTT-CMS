@@ -239,8 +239,7 @@ const movieSchema = new Schema<IMovie, MovieModel, IMovieMethods>(
       trim: true,
       uppercase: true,
       validate: {
-        validator: (value: string | null) =>
-          value === null || ISO_3166_1_ALPHA_2_REGEX.test(value),
+        validator: (value: string | null) => value === null || ISO_3166_1_ALPHA_2_REGEX.test(value),
         message: 'Country must be a valid ISO 3166-1 alpha-2 code',
       },
     },

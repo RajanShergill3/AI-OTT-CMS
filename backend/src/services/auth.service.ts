@@ -88,7 +88,9 @@ const createAuthSession = (user: UserDocument): AuthSessionResponse => {
 };
 
 const findUserByEmailWithPassword = async (email: string): Promise<UserDocument | null> => {
-  return User.findOne({ email: email.toLowerCase() }).select('+password') as Promise<UserDocument | null>;
+  return User.findOne({ email: email.toLowerCase() }).select(
+    '+password',
+  ) as Promise<UserDocument | null>;
 };
 
 const findUserById = async (userId: string): Promise<UserDocument | null> => {

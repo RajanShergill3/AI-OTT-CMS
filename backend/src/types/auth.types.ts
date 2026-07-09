@@ -1,6 +1,11 @@
 import type { Request } from 'express';
 
-export type { ChangePasswordInput, LoginInput, RefreshTokenInput, RegisterInput } from '../validators/auth.validator.js';
+export type {
+  ChangePasswordInput,
+  LoginInput,
+  RefreshTokenInput,
+  RegisterInput,
+} from '../validators/auth.validator.js';
 
 export type AuthenticatedRequest = Request & {
   user: NonNullable<Request['user']>;

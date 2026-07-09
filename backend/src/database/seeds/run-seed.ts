@@ -1,5 +1,5 @@
-import { connectDatabase, disconnectDatabase } from '../connection.js';
 import { logger } from '../../utils/logger.js';
+import { connectDatabase, disconnectDatabase } from '../connection.js';
 import { runSeeds } from './index.js';
 
 const run = async (): Promise<void> => {

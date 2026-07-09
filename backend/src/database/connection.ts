@@ -31,7 +31,6 @@ const READY_STATE_MAP: Record<number, DatabaseReadyState> = {
   [STATES.disconnecting]: 'disconnecting',
 };
 
-
 let listenersAttached = false;
 let shutdownInProgress = false;
 let shutdownCallback: GracefulShutdownCallback | undefined;
@@ -40,6 +39,11 @@ let shutdownTimeoutMs = 10_000;
 const mapReadyState = (state: number): DatabaseReadyState => {
   return READY_STATE_MAP[state] ?? 'disconnected';
 };
+
+const matchesReadyState = (
+  connection: mongoose.Connection,
+  expected: (typeof STATES)[keyof typeof STATES],
+): boolean => Number(connection.readyState) === expected;
 
 const maskUri = (uri: string): string => uri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:***@');
 
@@ -153,7 +157,7 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
 
   const { connection } = mongoose;
 
-  if (connection.readyState === STATES.connected) {
+  if (matchesReadyState(connection, STATES.connected)) {
     logger.debug('MongoDB already connected', { type: 'database' });
     if (shouldRegisterSignals) {
       registerSignalHandlers();
@@ -161,7 +165,7 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
     return;
   }
 
-  if (connection.readyState === STATES.connecting) {
+  if (matchesReadyState(connection, STATES.connecting)) {
     logger.debug('MongoDB connection in progress — awaiting existing attempt', {
       type: 'database',
     });
@@ -213,12 +217,12 @@ export const connectDatabase = async (options: ConnectDatabaseOptions = {}): Pro
 export const disconnectDatabase = async (): Promise<void> => {
   const { connection } = mongoose;
 
-  if (connection.readyState === STATES.disconnected) {
+  if (matchesReadyState(connection, STATES.disconnected)) {
     logger.debug('MongoDB already disconnected', { type: 'database' });
     return;
   }
 
-  if (connection.readyState === STATES.disconnecting) {
+  if (matchesReadyState(connection, STATES.disconnecting)) {
     logger.debug('MongoDB disconnect already in progress', { type: 'database' });
     await mongoose.connection.asPromise().catch(() => undefined);
     return;
@@ -247,7 +251,7 @@ export const getDatabaseStatus = (): DatabaseStatus => {
 
   return {
     readyState,
-    isConnected: connection.readyState === STATES.connected,
+    isConnected: matchesReadyState(connection, STATES.connected),
     host: connection.host || null,
     name: connection.name || null,
   };

@@ -1,7 +1,8 @@
 import { Router } from 'express';
 
 import authRoutes from './auth.routes.js';
-import healthRoutes from './health.routes.js';
+// import healthRoutes from './health.routes.js';
+import movieRoutes from './movie.routes.js';
 
 /**
  * API v1 router — aggregates all v1 route modules.
@@ -9,9 +10,9 @@ import healthRoutes from './health.routes.js';
  */
 const v1Router = Router();
 
-v1Router.use(healthRoutes);
+// v1Router.use(healthRoutes);
 v1Router.use('/auth', authRoutes);
-// router.use('/movies', movieRoutes);
+v1Router.use('/movies', movieRoutes);
 // router.use('/categories', categoryRoutes);
 // router.use('/users', userRoutes);
 // router.use('/dashboard', dashboardRoutes);

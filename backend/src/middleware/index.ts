@@ -10,5 +10,5 @@ export { requestIdMiddleware } from './request-id.middleware.js';
 export { requestLoggerMiddleware } from './request-logger.middleware.js';
 export { requireAnyRole, requireRole } from './role.middleware.js';
 export { securityMiddleware } from './security.middleware.js';
-export { validate, validateBody } from './validate.middleware.js';
+export { validate, validateBody, validateParams, validateQuery } from './validate.middleware.js';
 // export * from './tenant.middleware.js';

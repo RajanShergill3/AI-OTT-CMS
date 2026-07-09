@@ -1,4 +1,4 @@
-import { type FilterQuery,Types } from 'mongoose';
+import { type FilterQuery, Types } from 'mongoose';
 
 import { MovieErrors } from '../errors/movie.errors.js';
 import { AppError } from '../middleware/error.middleware.js';
@@ -97,9 +97,7 @@ const toIsoString = (value: Date | null | undefined): string | null => {
   return value ? value.toISOString() : null;
 };
 
-const normalizeCast = (
-  cast: NonNullable<CreateMovieInput['cast']>  ,
-): IMovieCastMember[] => {
+const normalizeCast = (cast: NonNullable<CreateMovieInput['cast']>): IMovieCastMember[] => {
   return cast.map((member) => ({
     name: member.name,
     character: member.character,

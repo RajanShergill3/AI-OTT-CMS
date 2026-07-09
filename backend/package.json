@@ -3,17 +3,29 @@
   "version": "0.1.0",
   "description": "AI-Powered OTT Content Management System — Express API",
   "type": "module",
+  "private": true,
   "engines": {
     "node": ">=22.0.0"
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "build:prod": "npm run clean && tsc",
     "start": "node dist/server.js",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
+    "prestart": "npm run build",
+
+    "typecheck": "tsc --noEmit",
+
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
+
+    "check": "npm run typecheck && npm run lint && npm run build && npm run format:check",
+
+    "clean": "rm -rf dist",
+
     "seed": "tsx src/database/seeds/run-seed.ts"
   },
   "keywords": [
@@ -21,7 +33,8 @@
     "cms",
     "express",
     "mongodb",
-    "typescript"
+    "typescript",
+    "ai"
   ],
   "license": "UNLICENSED",
   "dependencies": {

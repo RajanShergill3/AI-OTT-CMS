@@ -67,11 +67,7 @@ export const AuthErrors = {
     ),
 
   refreshTokenExpired: (): AppError =>
-    new AppError(
-      MESSAGES.refreshTokenExpired,
-      HTTP_STATUS.UNAUTHORIZED,
-      ERROR_CODES.TOKEN_EXPIRED,
-    ),
+    new AppError(MESSAGES.refreshTokenExpired, HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.TOKEN_EXPIRED),
 };
 
 /**
@@ -82,9 +78,7 @@ export const fromJwtVerificationError = (
   context: TokenContext = 'access',
 ): AppError => {
   if (error.reason === 'expired') {
-    return context === 'refresh'
-      ? AuthErrors.refreshTokenExpired()
-      : AuthErrors.expiredToken();
+    return context === 'refresh' ? AuthErrors.refreshTokenExpired() : AuthErrors.expiredToken();
   }
 
   return context === 'refresh' ? AuthErrors.refreshTokenInvalid() : AuthErrors.invalidToken();

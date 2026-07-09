@@ -6,8 +6,7 @@ export interface ValidationErrorDetail {
 }
 
 export type ValidationResult<T> =
-  | { success: true; data: T }
-  | { success: false; errors: ValidationErrorDetail[] };
+  { success: true; data: T } | { success: false; errors: ValidationErrorDetail[] };
 
 export const formatZodErrors = (error: ZodError): ValidationErrorDetail[] => {
   return error.issues.map((issue) => ({

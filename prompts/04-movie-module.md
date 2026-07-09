@@ -322,3 +322,106 @@ Requirements:
 - Follow SOLID principles.
 - Use Mongoose 8 best practices.
 - Do not modify models or validators.
+
+
+
+Prompt : Review and implement src/controllers/movie.controller.ts.
+
+Requirements:
+
+Use the existing movie.service.ts.
+
+Implement:
+
+- createMovie
+- updateMovie
+- getMovieById
+- listMovies
+- searchMovies
+- deleteMovie
+
+Requirements:
+
+- Keep controllers thin.
+- No business logic.
+- Use existing validation middleware.
+- Return standardized API responses using sendSuccess().
+- Use correct HTTP status codes.
+- Use asyncHandler compatibility.
+- Do not access MongoDB directly.
+- Do not duplicate validation.
+- Follow REST best practices.
+- Keep TypeScript strict.
+
+Explain any improvements made.
+
+
+
+Prompt : Review and implement src/routes/v1/movie.routes.ts.
+
+Implement routes:
+
+GET     /movies
+GET     /movies/search
+GET     /movies/:id
+POST    /movies
+PATCH   /movies/:id
+DELETE  /movies/:id
+
+Requirements:
+
+- Use authenticate middleware.
+- Protect write operations.
+- Use role middleware.
+
+Permissions:
+
+GET:
+ADMIN
+EDITOR
+VIEWER
+
+POST:
+ADMIN
+EDITOR
+
+PATCH:
+ADMIN
+EDITOR
+
+DELETE:
+ADMIN
+
+Use:
+
+validateBody()
+validateQuery()
+validateParams()
+
+Use asyncHandler()
+
+Follow REST best practices.
+
+Do not generate Swagger.
+
+Do not generate tests.
+
+Only implement routes.
+
+
+
+Prompt: Fix eslint.config.js for ESLint 9 Flat Config.
+
+Problem:
+
+Type-aware TypeScript rules are incorrectly being applied to eslint.config.js.
+
+Requirements:
+
+- Keep Flat Config
+- Keep recommendedTypeChecked
+- Apply type-aware rules ONLY to src/**/*.ts
+- Do not lint eslint.config.js using TypeScript parser
+- Preserve existing rules
+- Follow latest ESLint 9 documentation
+- Explain every change

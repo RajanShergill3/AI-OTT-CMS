@@ -136,7 +136,10 @@ const castMemberSchema = z
         CAST_CHARACTER_MAX_LENGTH,
         `Character name cannot exceed ${CAST_CHARACTER_MAX_LENGTH} characters`,
       ),
-    order: z.number().int('Cast billing order must be an integer').min(0, 'Cast billing order cannot be negative'),
+    order: z
+      .number()
+      .int('Cast billing order must be an integer')
+      .min(0, 'Cast billing order cannot be negative'),
     imageUrl: z.url('Cast image URL must be a valid URL').nullable().optional(),
   })
   .strict();
@@ -197,7 +200,10 @@ const seoDescriptionSchema = z
 const searchTermSchema = z
   .string()
   .trim()
-  .min(SEARCH_QUERY_MIN_LENGTH, `Search query must be at least ${SEARCH_QUERY_MIN_LENGTH} characters`)
+  .min(
+    SEARCH_QUERY_MIN_LENGTH,
+    `Search query must be at least ${SEARCH_QUERY_MIN_LENGTH} characters`,
+  )
   .max(SEARCH_QUERY_MAX_LENGTH, `Search query cannot exceed ${SEARCH_QUERY_MAX_LENGTH} characters`);
 
 // ---------------------------------------------------------------------------
@@ -339,10 +345,12 @@ export const createMovieSchema = movieWritableFieldsSchema.superRefine((data, ct
  *
  * Slug is not client-writable — use service logic if slug regeneration is needed.
  */
-export const updateMovieSchema = movieWritableFieldsSchema.partial().strict().refine(
-  (data) => Object.keys(data).length > 0,
-  { message: 'At least one field must be provided for update' },
-);
+export const updateMovieSchema = movieWritableFieldsSchema
+  .partial()
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided for update',
+  });
 
 // ---------------------------------------------------------------------------
 // 3. Get Movie By ID — GET /movies/:id

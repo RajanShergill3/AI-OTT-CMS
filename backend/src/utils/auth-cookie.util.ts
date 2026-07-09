@@ -29,7 +29,12 @@ export const parseDurationToMilliseconds = (duration: string): number => {
 export const getTokenExpiresInSeconds = (token: string): number => {
   const decoded = jwt.decode(token);
 
-  if (!decoded || typeof decoded === 'string' || decoded.exp === undefined || decoded.iat === undefined) {
+  if (
+    !decoded ||
+    typeof decoded === 'string' ||
+    decoded.exp === undefined ||
+    decoded.iat === undefined
+  ) {
     return 0;
   }
 
