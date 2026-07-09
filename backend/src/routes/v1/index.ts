@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import authRoutes from './auth.routes.js';
 import healthRoutes from './health.routes.js';
 
 /**
@@ -9,8 +10,7 @@ import healthRoutes from './health.routes.js';
 const v1Router = Router();
 
 v1Router.use(healthRoutes);
-
-// router.use('/auth', authRoutes);
+v1Router.use('/auth', authRoutes);
 // router.use('/movies', movieRoutes);
 // router.use('/categories', categoryRoutes);
 // router.use('/users', userRoutes);
